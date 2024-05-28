@@ -38,13 +38,13 @@
 
 #define SW0 0x1
 
-// Overloading 
+// Overloading
 #define OVERLOAD_BASE_VALUE 20
 #define OVERLOAD_STEP 10
 #define MAX_OVERLOAD 100
 #define MIN_OVERLOAD 0
 
-#define OVERLOADING_PERIOD      ((RTIME)(100000000UL))
+#define OVERLOADING_PERIOD ((RTIME)(100000000UL))
 
 // Control task defines
 #define CTL_TASK_PERIOD 100000000 // 10HZ
@@ -56,47 +56,57 @@ void ioctl_ctl_task(void *cookie)
 
     rt_task_set_periodic(NULL, TM_NOW, CTL_TASK_PERIOD);
 
-    int current_overload = OVERLOAD_BASE_VALUE; 
-    unsigned prev_switches = read_switch(MMAP); 
+    int current_overload = OVERLOAD_BASE_VALUE;
+    unsigned prev_switches = read_switch(MMAP);
 
     while (priv->running)
     {
         unsigned keys = read_key(MMAP);
         unsigned switches = read_switch(MMAP);
-        unsigned changed_state; 
+        unsigned changed_state;
 
         // Check if the key0 is pressed
-        if (keys & KEY0) {
+        if (keys & KEY0)
+        {
             priv->running = false;
         }
 
         // Increment CPU overload
-        if (keys & KEY2) {
-            if(current_overload + OVERLOAD_STEP < MAX_OVERLOAD ) {
+        if (keys & KEY2)
+        {
+            if (current_overload + OVERLOAD_STEP < MAX_OVERLOAD)
+            {
                 current_overload += OVERLOAD_STEP;
             }
             rt_printf("Overload value = %d\n", current_overload);
         }
 
-        // Decrement CPU overload 
-        if (keys & KEY3) {
-            if(current_overload - OVERLOAD_STEP > MIN_OVERLOAD ) {
+        // Decrement CPU overload
+        if (keys & KEY3)
+        {
+            if (current_overload - OVERLOAD_STEP > MIN_OVERLOAD)
+            {
                 current_overload -= OVERLOAD_STEP;
             }
             rt_printf("Overload value = %d\n", current_overload);
         }
 
-        changed_state = (switches ^ prev_switches) & SW0; 
+        changed_state = (switches ^ prev_switches) & SW0;
 
-        // Enable CPU overload 
-        if (switches & SW0) {
-            if(changed_state) {
+        // Enable CPU overload
+        if (switches & SW0)
+        {
+            if (changed_state)
+            {
                 rt_printf("CPU overload: ON\n");
             }
             busy_cpu(current_overload * (OVERLOADING_PERIOD / 100));
-        } else {
-            // Disable CPU overload 
-            if(changed_state) {
+        }
+        else
+        {
+            // Disable CPU overload
+            if (changed_state)
+            {
                 rt_printf("CPU overload: OFF\n");
             }
         }
@@ -117,7 +127,8 @@ int main(int argc, char *argv[])
     mlockall(MCL_CURRENT | MCL_FUTURE);
 
     // Ioctl setup
-    if (init_ioctl()) {
+    if (init_ioctl())
+    {
         perror("Could not init IOCTL...\n");
         exit(EXIT_FAILURE);
     }
@@ -130,14 +141,16 @@ int main(int argc, char *argv[])
     // Create the IOCTL control task
     if (rt_task_spawn(&ioctl_ctl_rt_task, "program control task", 0,
                       CTL_TASK_PRIORITY, T_JOINABLE,
-                      ioctl_ctl_task, &ctl) != 0) {
+                      ioctl_ctl_task, &ctl) != 0)
+    {
         perror("Error while starting acquisition_task");
         exit(EXIT_FAILURE);
     }
     printf("Launched audio acquisition task\n");
 
     // Audio setup
-    if (init_audio()) {
+    if (init_audio())
+    {
         perror("Could not init the audio...\n");
         exit(EXIT_FAILURE);
     }
@@ -150,7 +163,8 @@ int main(int argc, char *argv[])
     // Create the audio acquisition task
     if (rt_task_spawn(&priv_audio.acquisition_rt_task, "audio task", 0,
                       AUDIO_ACK_TASK_PRIORITY, T_JOINABLE,
-                      acquisition_task, &priv_audio) != 0) {
+                      acquisition_task, &priv_audio) != 0)
+    {
         perror("Error while starting acquisition_task");
         exit(EXIT_FAILURE);
     }
@@ -158,7 +172,8 @@ int main(int argc, char *argv[])
 
     // Video setup
     ret = init_video();
-    if (ret < 0) {
+    if (ret < 0)
+    {
         perror("Could not init the video...\n");
         return ret;
     }
@@ -171,14 +186,16 @@ int main(int argc, char *argv[])
     priv_video.output = (uint8_t *)malloc(HEIGHT * WIDTH * BYTES_PER_PIXEL);
     priv_video.ctl = &ctl;
 
-    if(rt_event_create(&priv_video.event, "event_processing_video_acq", 0, EV_FIFO)) {
+    if (rt_event_create(&priv_video.event, "event_processing_video_acq", 0, EV_FIFO))
+    {
         perror("Processing queue");
         exit(EXIT_FAILURE);
     }
 
     // Create the video acquisition task
     if (rt_task_spawn(&priv_video.rt_acq_task, "video acquisition task", 0, VIDEO_ACQ_TASK_PRIORITY,
-                      T_JOINABLE, video_acquisition_task, &priv_video) != 0) {
+                      T_JOINABLE, video_acquisition_task, &priv_video) != 0)
+    {
         perror("Error while starting video acquisition task\n");
         exit(EXIT_FAILURE);
     }
@@ -186,7 +203,8 @@ int main(int argc, char *argv[])
 
     // Create the video processing task
     if (rt_task_spawn(&priv_video.rt_proc_task, "video processing task", 0, VIDEO_ACQ_TASK_PRIORITY,
-                      T_JOINABLE, video_processing_task, &priv_video) != 0) {
+                      T_JOINABLE, video_processing_task, &priv_video) != 0)
+    {
         perror("Error while starting video processing task\n");
         exit(EXIT_FAILURE);
     }
