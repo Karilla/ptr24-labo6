@@ -45,9 +45,12 @@ typedef struct Priv_video_args
     RT_TASK rt_acq_task;
     RT_TASK rt_proc_task;
     RT_EVENT event;
+    RT_ALARM alarm;
     uint8_t *buffer;
     uint8_t *output;
 } Priv_video_args_t;
+
+void alarm_handler(void *cookie);
 
 /**
  * \brief Read the video data from a file and writes it to the
@@ -59,7 +62,7 @@ typedef struct Priv_video_args
 void video_acquisition_task(void *cookie);
 
 /**
- * \brief Task waiting to be signaled. The processing will convert to 
+ * \brief Task waiting to be signaled. The processing will convert to
  * to grayscale and display the picture on the screen
  *
  * \param cookie pointer to private data. Can be anything

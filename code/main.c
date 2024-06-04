@@ -185,6 +185,7 @@ int main(int argc, char *argv[])
     priv_video.buffer = (uint8_t *)malloc(HEIGHT * WIDTH * BYTES_PER_PIXEL * NB_VIDEO_BUFFERS);
     priv_video.output = (uint8_t *)malloc(HEIGHT * WIDTH * BYTES_PER_PIXEL);
     priv_video.ctl = &ctl;
+    rt_alarm_create(&priv_video.alarm, "Video Alarm", alarm_handler, NULL);
 
     if (rt_event_create(&priv_video.event, "event_processing_video_acq", 0, EV_FIFO))
     {
