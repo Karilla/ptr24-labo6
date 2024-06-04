@@ -16,6 +16,12 @@
 
 void alarm_handler(void *cookie)
 {
+    Priv_video_args_t *priv = (Priv_video_args_t *)cookie;
+    if(priv->state == NORMAL) {
+        priv->state = DEGRADED;
+    } else if(priv->state == DEGRADED) {
+        priv->state = STOPPED;
+    }
 }
 
 void video_acquisition_task(void *cookie)
@@ -37,7 +43,6 @@ void video_acquisition_task(void *cookie)
 
     while (priv->ctl->running)
     {
-        rt_alarm_start();
         fseek(file, 0, SEEK_SET);
 
         for (int i = 0; i < NB_FRAMES; i++)
@@ -47,6 +52,8 @@ void video_acquisition_task(void *cookie)
             {
                 break;
             }
+
+            rt_alarm_start(&priv->alarm, period_in_ns + 1000);
 
             // Copy the data from the file to a buffer
             unsigned read = fread(priv->buffer + (IMAGE_SIZE * (buff_nb % NB_VIDEO_BUFFERS)),
@@ -59,8 +66,8 @@ void video_acquisition_task(void *cookie)
             buff_nb++;
 
             rt_event_signal(&priv->event, VIDEO_PROCESSING_FLAG);
-
             rt_task_wait_period(NULL);
+            rt_alarm_stop(&priv->alarm);
         }
     }
 

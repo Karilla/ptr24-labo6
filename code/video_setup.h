@@ -39,6 +39,15 @@
 
 #define S_IN_NS 1000000000UL
 
+enum StateMachine {
+    NORMAL = 0,
+    DEGRADED,
+    STOPPED
+};
+
+typedef enum StateMachine StateMachine;
+
+
 typedef struct Priv_video_args
 {
     Ctl_data_t *ctl;
@@ -46,6 +55,7 @@ typedef struct Priv_video_args
     RT_TASK rt_proc_task;
     RT_EVENT event;
     RT_ALARM alarm;
+    StateMachine state;
     uint8_t *buffer;
     uint8_t *output;
 } Priv_video_args_t;

@@ -185,7 +185,8 @@ int main(int argc, char *argv[])
     priv_video.buffer = (uint8_t *)malloc(HEIGHT * WIDTH * BYTES_PER_PIXEL * NB_VIDEO_BUFFERS);
     priv_video.output = (uint8_t *)malloc(HEIGHT * WIDTH * BYTES_PER_PIXEL);
     priv_video.ctl = &ctl;
-    rt_alarm_create(&priv_video.alarm, "Video Alarm", alarm_handler, NULL);
+    priv_video.state = NORMAL;
+    rt_alarm_create(&priv_video.alarm, "Video Alarm", alarm_handler, &priv_video);
 
     if (rt_event_create(&priv_video.event, "event_processing_video_acq", 0, EV_FIFO))
     {
@@ -233,6 +234,8 @@ int main(int argc, char *argv[])
     free(priv_audio.samples_buf);
     free(priv_video.buffer);
     free(priv_video.output);
+
+    rt_alarm_delete(&priv_video.alarm);
 
     munlockall();
 
