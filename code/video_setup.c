@@ -14,14 +14,32 @@
 
 #define EVENT_TIMEOUT (1000000000 / 5) // 0.2s
 
-void alarm_handler(void *cookie)
+#define THREEE_SECONDS 3000000000
+
+void missed_deadline(void *cookie)
 {
     Priv_video_args_t *priv = (Priv_video_args_t *)cookie;
     if(priv->state == NORMAL) {
+        rt_printf("Missed deadline: switch to degraded\n");
         priv->state = DEGRADED;
     } else if(priv->state == DEGRADED) {
+        rt_printf("Missed deadline: switch to stopped\n");
         priv->state = STOPPED;
     }
+    rt_alarm_start(&priv->alarm, THREEE_SECONDS, TM_INFINITE);
+}
+
+void alarm_handler(void *cookie)
+{
+    Priv_video_args_t *priv = (Priv_video_args_t *)cookie;
+    if(priv->state == DEGRADED) {
+        rt_printf("Revert back to normal\n");
+        priv->state = NORMAL;
+    } else if(priv->state == STOPPED) {
+        rt_printf("Revert back to degraded\n");
+        priv->state = DEGRADED;
+    }
+    rt_alarm_start(&priv->alarm, THREEE_SECONDS, TM_INFINITE);
 }
 
 void video_acquisition_task(void *cookie)
@@ -53,7 +71,7 @@ void video_acquisition_task(void *cookie)
                 break;
             }
 
-            rt_alarm_start(&priv->alarm, period_in_ns + 1000);
+            rt_alarm_start(&priv->missed_deadline, period_in_ns + 1000, TM_INFINITE);
 
             // Copy the data from the file to a buffer
             unsigned read = fread(priv->buffer + (IMAGE_SIZE * (buff_nb % NB_VIDEO_BUFFERS)),
@@ -67,7 +85,7 @@ void video_acquisition_task(void *cookie)
 
             rt_event_signal(&priv->event, VIDEO_PROCESSING_FLAG);
             rt_task_wait_period(NULL);
-            rt_alarm_stop(&priv->alarm);
+            rt_alarm_stop(&priv->missed_deadline);
         }
     }
 

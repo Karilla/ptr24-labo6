@@ -17,9 +17,10 @@
 #ifndef VIDEO_SETUP_H
 #define VIDEO_SETUP_H
 
-#include <alchemy/task.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <alchemy/alarm.h>
+#include <alchemy/task.h>
 #include <alchemy/event.h>
 
 #include "control.h"
@@ -54,12 +55,14 @@ typedef struct Priv_video_args
     RT_TASK rt_acq_task;
     RT_TASK rt_proc_task;
     RT_EVENT event;
+    RT_ALARM missed_deadline;
     RT_ALARM alarm;
     StateMachine state;
     uint8_t *buffer;
     uint8_t *output;
 } Priv_video_args_t;
 
+void missed_deadline(void *cookie);
 void alarm_handler(void *cookie);
 
 /**
